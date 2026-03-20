@@ -5,20 +5,20 @@ import time
 import sys
 import os
 
-# -------- COLORS --------
+# -------- Colors --------
 R = "\033[91m"
 G = "\033[92m"
 Y = "\033[93m"
 C = "\033[96m"
 W = "\033[0m"
 
-# -------- CLEAR --------
+# -------- Clear --------
 def clear():
     os.system("clear")
 
-# -------- LOGO --------
+# -------- Logo --------
 def logo():
-    print(R + """
+    print(R + r"""
 ██╗    ██╗███████╗██████╗ ██╗  ██╗
 ██║    ██║██╔════╝██╔══██╗╚██╗██╔╝
 ██║ █╗ ██║█████╗  ██████╔╝ ╚███╔╝ 
@@ -26,119 +26,109 @@ def logo():
 ╚███╔███╔╝███████╗██████╔╝██╔╝ ██╗
  ╚══╝╚══╝ ╚══════╝╚═════╝ ╚═╝  ╚═╝
 
-        🔥 WEBX PRO MAX v2 🔥
+        🔥 WEBX PRO MAX 🔥
 """ + W)
 
-# -------- LOADING --------
+# -------- Loading --------
 def loading(msg="Scanning"):
-    print(Y + msg, end="")
+    print(Y + f"\n{msg}", end="")
     for _ in range(5):
         print(".", end="")
         sys.stdout.flush()
-        time.sleep(0.3)
-    print(W)
+        time.sleep(0.4)
+    print(W + "\n")
 
-# -------- SAVE REPORT --------
-def save(data):
+# -------- Report Save --------
+def save_report(data):
     with open("report.txt", "a") as f:
         f.write(data + "\n")
 
-# -------- GET IP --------
+# -------- IP --------
 def get_ip(domain):
     try:
         ip = socket.gethostbyname(domain)
         print(G + f"[+] IP: {ip}" + W)
-        save(f"IP: {ip}")
+        save_report(f"IP: {ip}")
         return ip
-    except Exception as e:
-        print(R + f"[-] IP Error: {e}" + W)
-        return None
+    except:
+        print(R + "[-] IP Error" + W)
 
-# -------- STATUS --------
+# -------- Status --------
 def status(domain):
     try:
-        r = requests.get("http://" + domain, timeout=5)
-        print(G + f"[+] Status: {r.status_code}" + W)
-        save(f"Status: {r.status_code}")
+        res = requests.get("http://" + domain)
+        print(G + f"[+] Status Code: {res.status_code}" + W)
+        save_report(f"Status: {res.status_code}")
     except:
-        print(R + "[-] Website not reachable" + W)
+        print(R + "[-] Site Down" + W)
 
 # -------- WHOIS --------
 def domain_info(domain):
     try:
         info = whois.whois(domain)
         print(C + "[+] Domain Info" + W)
-        print("Name:", info.domain_name)
         print("Created:", info.creation_date)
         print("Expiry:", info.expiration_date)
-        save(str(info))
-    except Exception as e:
-        print(R + f"[-] WHOIS Error: {e}" + W)
+        save_report(str(info))
+    except:
+        print(R + "[-] WHOIS Error" + W)
 
-# -------- LOCATION --------
+# -------- Location --------
 def location(ip):
     try:
-        data = requests.get(f"http://ip-api.com/json/{ip}", timeout=5).json()
+        data = requests.get(f"http://ip-api.com/json/{ip}").json()
         print(C + "[+] Location" + W)
-        print("Country:", data.get("country"))
-        print("City:", data.get("city"))
-        print("ISP:", data.get("isp"))
+        print("Country:", data['country'])
+        print("City:", data['city'])
     except:
         print(R + "[-] Location Error" + W)
 
-# -------- PORT SCAN --------
+# -------- Ports --------
 def ports(ip):
-    print(C + "[+] Port Scan" + W)
-    common_ports = [21,22,23,25,53,80,110,139,143,443,445,8080]
-    
-    for p in common_ports:
-        try:
-            s = socket.socket()
-            s.settimeout(0.5)
-            if s.connect_ex((ip,p)) == 0:
-                print(G + f"[OPEN] {p}" + W)
-            s.close()
-        except:
-            pass
+    print(C + "[+] Ports Scan" + W)
+    for p in [21,22,80,443,8080]:
+        s = socket.socket()
+        s.settimeout(1)
+        if s.connect_ex((ip,p)) == 0:
+            print(G + f"OPEN {p}" + W)
+        s.close()
 
-# -------- SUBDOMAIN --------
+# -------- Subdomain --------
 def subdomains(domain):
-    print(C + "[+] Subdomains" + W)
-    subs = ["www","mail","ftp","admin","test","dev","api"]
-    
+    subs = ["www","mail","ftp","admin","test"]
+    print(C + "[+] Subdomains:" + W)
     for sub in subs:
-        url = f"{sub}.{domain}"
+        url = sub + "." + domain
         try:
             socket.gethostbyname(url)
             print(G + url + W)
         except:
             pass
 
-# -------- ADMIN FINDER --------
+# -------- Admin Finder --------
 def admin_finder(domain):
-    print(C + "[+] Admin Finder" + W)
-    paths = ["admin","login","admin.php","cpanel","dashboard"]
-    
+    paths = ["admin","login","admin.php","cpanel"]
+    print(C + "[+] Admin Panels:" + W)
     for p in paths:
         url = f"http://{domain}/{p}"
         try:
-            r = requests.get(url, timeout=3)
+            r = requests.get(url)
             if r.status_code == 200:
                 print(G + url + W)
         except:
             pass
 
-# -------- TECH --------
+# -------- Tech --------
 def tech(domain):
     try:
-        r = requests.get("http://" + domain, timeout=5)
-        print(C + "[+] Tech Info" + W)
+        r = requests.get("http://" + domain)
+        print(C + "[+] Tech:" + W)
         print("Server:", r.headers.get("Server"))
         print("Powered:", r.headers.get("X-Powered-By"))
     except:
-        print(R + "[-] Tech Error" + W)
+        print(R + "[-] Error" + W)
 
-# -------- FULL SCAN --------
+# -------- Full Scan --------
 def full_scan(domain):
     ip = get_ip(domain)
     if ip:
@@ -151,30 +141,29 @@ def full_scan(domain):
         admin_finder(domain)
         tech(domain)
 
-# -------- MENU --------
+# -------- Menu --------
 def menu():
     clear()
     logo()
     print(Y + """
-1. IP Finder
-2. Website Status
+1. IP
+2. Status
 3. Domain Info
 4. Location
-5. Port Scan
-6. Subdomain Finder
+5. Ports
+6. Subdomains
 7. Admin Finder
-8. Tech Detection
+8. Tech
 9. FULL SCAN
 0. Exit
 """ + W)
 
-# -------- MAIN --------
+# -------- Main --------
 while True:
     menu()
     ch = input(G + "Select ➤ " + W)
 
     if ch == "0":
-        print(R + "Exiting..." + W)
         break
 
     domain = input(C + "Enter Domain ➤ " + W)
@@ -186,13 +175,11 @@ while True:
     elif ch == "3":
         domain_info(domain)
     elif ch == "4":
-        ip = get_ip(domain)
-        if ip:
-            location(ip)
+        ip = socket.gethostbyname(domain)
+        location(ip)
     elif ch == "5":
-        ip = get_ip(domain)
-        if ip:
-            ports(ip)
+        ip = socket.gethostbyname(domain)
+        ports(ip)
     elif ch == "6":
         subdomains(domain)
     elif ch == "7":
@@ -202,6 +189,6 @@ while True:
     elif ch == "9":
         full_scan(domain)
     else:
-        print(R + "Invalid Option" + W)
+        print("Invalid")
 
-    input(Y + "\nPress Enter..." + W)
+    input("\nPress Enter...")
